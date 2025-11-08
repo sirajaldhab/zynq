@@ -1,0 +1,28 @@
+// Prisma schema for Zynq (initial minimal)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  status        String   @default("PENDING")
+  role          Role     @relation(fields: [roleId], references: [id])
+  roleId        String
+  createdAt     DateTime @default(now())
+  lastLogin     DateTime?
+}
+
+model Role {
+  id              String  @id @default(uuid())
+  name            String  @unique
+  permissionsJson Json
+  users           User[]
+}

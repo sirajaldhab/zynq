@@ -1,0 +1,13 @@
+**/.git
+**/.cache
+**/node_modules
+**/dist
+**/build
+**/coverage
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# VCS
+.git

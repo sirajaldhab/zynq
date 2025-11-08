@@ -1,0 +1,35 @@
+{
+  "name": "zynq",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Zynq — Office Dashboard (React + Ionic + Capacitor + Tauri + NestJS + PostgreSQL + Prisma + RxDB)",
+  "packageManager": "pnpm@9.0.0",
+  "license": "MIT",
+  "scripts": {
+    "postinstall": "husky install || true",
+    "lint": "pnpm -r eslint .",
+    "format": "pnpm -r prettier --write .",
+    "typecheck": "pnpm -r tsc -b",
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared",
+    "tests"
+  ],
+  "devDependencies": {
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.4.0"
+  }
+}
