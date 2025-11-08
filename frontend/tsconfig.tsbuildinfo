@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/app/app.tsx","./src/auth/authcontext.tsx","./src/auth/protectedroute.tsx","./src/components/nav.tsx","./src/db/rxdb.ts","./src/pages/admin.tsx","./src/pages/dashboard.tsx","./src/pages/finance.tsx","./src/pages/hr.tsx","./src/pages/login.tsx","./src/pages/projects.tsx","./vite.config.ts","./capacitor.config.ts"],"version":"5.9.3"}

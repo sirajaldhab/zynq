@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -28,7 +28,7 @@ model User {
 model Role {
   id              String  @id @default(uuid())
   name            String  @unique
-  permissionsJson Json
+  permissionsJson String
   users           User[]
 }
 
@@ -49,7 +49,7 @@ model RefreshToken {
 model Company {
   id           String @id @default(uuid())
   name         String @unique
-  settingsJson Json
+  settingsJson String
   projects     Project[]
 }
 
@@ -61,7 +61,7 @@ model Project {
   main_contractor    String?
   consultant         String?
   project_manager_id String?
-  plots_json         Json?
+  plots_json         String?
   start_date         DateTime?
   end_date           DateTime?
   status             String    @default("PLANNING")
@@ -74,7 +74,7 @@ model Vendor {
   id               String  @id @default(uuid())
   name             String  @unique
   contact          String?
-  bank_details_json Json?
+  bank_details_json String?
   materials        Material[]
 }
 
@@ -82,7 +82,7 @@ model Client {
   id                   String  @id @default(uuid())
   name                 String  @unique
   contact              String?
-  projects_linked_json Json?
+  projects_linked_json String?
   invoices             Invoice[]
 }
 
@@ -97,7 +97,7 @@ model Material {
   quantity        Float
   unit_price      Float?
   total           Float
-  attachments     Json?
+  attachments     String?
 
   @@index([projectId, vendorId])
 }
@@ -110,7 +110,7 @@ model Invoice {
   clientId    String
   invoice_date DateTime
   due_date     DateTime?
-  items_json   Json
+  items_json   String
   subtotal     Float
   vat          Float
   total        Float
@@ -135,7 +135,7 @@ model Employee {
   id                       String  @id @default(uuid())
   user                     User    @relation(fields: [userId], references: [id])
   userId                   String  @unique
-  employment_details_json  Json?
+  employment_details_json  String?
   attendance               Attendance[]
 }
 
@@ -172,8 +172,8 @@ model AuditLog {
   action        String
   resource_type String
   resource_id   String
-  before_json   Json?
-  after_json    Json?
+  before_json   String?
+  after_json    String?
   timestamp     DateTime @default(now())
 }
 
@@ -182,7 +182,7 @@ model Notification {
   user       User     @relation(fields: [userId], references: [id])
   userId     String
   type       String
-  payload_json Json
+  payload_json String
   read       Boolean  @default(false)
   created_at DateTime @default(now())
 }

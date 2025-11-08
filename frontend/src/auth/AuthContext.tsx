@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { API_BASE } from '../config';
 
 interface AuthState {
   accessToken: string | null;
@@ -26,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     else localStorage.removeItem('refreshToken');
   }, [state]);
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8443';
+  const apiBase = API_BASE;
 
   const value = useMemo<AuthContextValue>(() => ({
     accessToken: state.accessToken,

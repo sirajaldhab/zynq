@@ -18,11 +18,11 @@ export class ProjectsService {
     return p;
   }
 
-  create(data: { companyId: string; name: string; main_contractor?: string | null; consultant?: string | null; project_manager_id?: string | null; plots_json?: any; start_date?: Date | null; end_date?: Date | null; status?: string | null; }) {
+  create(data: { companyId: string; name: string; main_contractor?: string | null; consultant?: string | null; project_manager_id?: string | null; plots_json?: any; start_date?: Date | null; end_date?: Date | null; status?: string; }) {
     return this.prisma.project.create({ data });
   }
 
-  update(id: string, data: Partial<{ name: string; main_contractor?: string | null; consultant?: string | null; project_manager_id?: string | null; plots_json?: any; start_date?: Date | null; end_date?: Date | null; status?: string | null; }>) {
+  update(id: string, data: Partial<{ name: string; main_contractor?: string | null; consultant?: string | null; project_manager_id?: string | null; plots_json?: any; start_date?: Date | null; end_date?: Date | null; status?: string; }>) {
     return this.prisma.project.update({ where: { id }, data });
   }
 

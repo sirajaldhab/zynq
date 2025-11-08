@@ -17,3 +17,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </IonApp>
   </React.StrictMode>,
 );
+
+// PWA: register service worker if supported
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .catch((err) => console.warn('SW registration failed', err));
+  });
+}

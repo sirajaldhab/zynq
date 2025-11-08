@@ -24,8 +24,8 @@
     "ionicons": "^7.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0",
-    "rxdb": "^15.34.0",
+    "react-router-dom": "^6.30.1",
+    "rxdb": "^16.20.0",
     "dexie": "^4.0.8",
     "zod": "^3.23.8"
   },

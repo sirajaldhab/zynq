@@ -7,6 +7,11 @@ import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { ClientsModule } from './clients/clients.module';
+import { MaterialsModule } from './materials/materials.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { PaymentsModule } from './payments/payments.module';
+import { ActivityGateway } from './realtime/activity.gateway';
+import { SyncModule } from './sync/sync.module';
 
 @Module({
   imports: [
@@ -18,6 +23,11 @@ import { ClientsModule } from './clients/clients.module';
     ProjectsModule,
     VendorsModule,
     ClientsModule,
+    MaterialsModule,
+    InvoicesModule,
+    PaymentsModule,
+    SyncModule,
   ],
+  providers: [ActivityGateway],
 })
 export class AppModule {}

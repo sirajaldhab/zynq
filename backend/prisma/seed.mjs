@@ -16,7 +16,7 @@ async function main() {
     await prisma.role.upsert({
       where: { name: r.name },
       update: {},
-      create: { name: r.name, permissionsJson: {} },
+      create: { name: r.name, permissionsJson: '{}' },
     });
   }
 

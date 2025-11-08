@@ -4,7 +4,9 @@
     "outDir": "dist",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "types": ["node"]
+    "types": ["node"],
+    "module": "CommonJS",
+    "moduleResolution": "Node"
   },
   "include": ["src", "prisma"],
   "exclude": ["node_modules", "dist"]
