@@ -8,7 +8,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.use(helmet());
   app.use(cookieParser());
-  app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 8443;
   await app.listen(port);

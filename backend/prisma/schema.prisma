@@ -9,15 +9,17 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id            String         @id @default(uuid())
+  email         String         @unique
   name          String
   passwordHash  String
-  status        String   @default("PENDING")
-  role          Role     @relation(fields: [roleId], references: [id])
+  status        String         @default("PENDING")
+  role          Role           @relation(fields: [roleId], references: [id])
   roleId        String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime       @default(now())
   lastLogin     DateTime?
+  mfaEnabled    Boolean        @default(false)
+  refreshTokens RefreshToken[]
 }
 
 model Role {
@@ -25,4 +27,18 @@ model Role {
   name            String  @unique
   permissionsJson Json
   users           User[]
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  ip         String?
+  userAgent  String?
+
+  @@index([userId, expiresAt])
 }
