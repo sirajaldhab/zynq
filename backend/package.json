@@ -9,6 +9,8 @@
     "build": "nest build",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.mjs",
     "prisma:migrate": "prisma migrate dev --name init",
     "test": "jest --passWithNoTests"
   },

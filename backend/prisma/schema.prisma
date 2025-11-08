@@ -20,6 +20,9 @@ model User {
   lastLogin     DateTime?
   mfaEnabled    Boolean        @default(false)
   refreshTokens RefreshToken[]
+  employee      Employee?
+  auditLogs     AuditLog[]
+  notifications Notification[]
 }
 
 model Role {
@@ -41,4 +44,152 @@ model RefreshToken {
   userAgent  String?
 
   @@index([userId, expiresAt])
+}
+
+model Company {
+  id           String @id @default(uuid())
+  name         String @unique
+  settingsJson Json
+  projects     Project[]
+}
+
+model Project {
+  id                 String    @id @default(uuid())
+  company            Company   @relation(fields: [companyId], references: [id])
+  companyId          String
+  name               String
+  main_contractor    String?
+  consultant         String?
+  project_manager_id String?
+  plots_json         Json?
+  start_date         DateTime?
+  end_date           DateTime?
+  status             String    @default("PLANNING")
+  materials          Material[]
+  invoices           Invoice[]
+  tasks              Task[]
+}
+
+model Vendor {
+  id               String  @id @default(uuid())
+  name             String  @unique
+  contact          String?
+  bank_details_json Json?
+  materials        Material[]
+}
+
+model Client {
+  id                   String  @id @default(uuid())
+  name                 String  @unique
+  contact              String?
+  projects_linked_json Json?
+  invoices             Invoice[]
+}
+
+model Material {
+  id              String   @id @default(uuid())
+  project         Project  @relation(fields: [projectId], references: [id])
+  projectId       String
+  invoice_date    DateTime?
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id])
+  vendorId        String?
+  item_description String
+  quantity        Float
+  unit_price      Float?
+  total           Float
+  attachments     Json?
+
+  @@index([projectId, vendorId])
+}
+
+model Invoice {
+  id          String    @id @default(uuid())
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   String
+  client      Client    @relation(fields: [clientId], references: [id])
+  clientId    String
+  invoice_date DateTime
+  due_date     DateTime?
+  items_json   Json
+  subtotal     Float
+  vat          Float
+  total        Float
+  status       String    @default("DRAFT")
+  payments     Payment[]
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId   String
+  amount      Float
+  payment_date DateTime
+  method      String?
+  reference   String?
+  created_by  String?
+
+  @@index([invoiceId])
+}
+
+model Employee {
+  id                       String  @id @default(uuid())
+  user                     User    @relation(fields: [userId], references: [id])
+  userId                   String  @unique
+  employment_details_json  Json?
+  attendance               Attendance[]
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  check_in   DateTime
+  check_out  DateTime?
+  location   String?
+  status     String    @default("PRESENT")
+
+  @@index([employeeId, check_in])
+}
+
+model Task {
+  id              String   @id @default(uuid())
+  project         Project  @relation(fields: [projectId], references: [id])
+  projectId       String
+  title           String
+  description     String?
+  assignee_id     String?
+  status          String   @default("TO_DO")
+  start_date      DateTime?
+  due_date        DateTime?
+  estimated_hours Int?
+  progress_percent Int     @default(0)
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+  action        String
+  resource_type String
+  resource_id   String
+  before_json   Json?
+  after_json    Json?
+  timestamp     DateTime @default(now())
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  type       String
+  payload_json Json
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+model BackupMeta {
+  id         String   @id @default(uuid())
+  filename   String
+  encrypted  Boolean  @default(true)
+  created_at DateTime @default(now())
 }
