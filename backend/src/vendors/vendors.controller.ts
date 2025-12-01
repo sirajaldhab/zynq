@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Req } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
@@ -18,20 +18,33 @@ export class VendorsController {
   }
 
   @Post()
-  create(@Body() body: { name: string; contact?: string; bank_details_json?: any }) {
-    return this.vendors.create(body);
+  create(@Body() body: { name: string; contact?: string; bank_details_json?: any }, @Req() req: any) {
+    return this.vendors.create(body, {
+      id: req.user?.id,
+      name: req.user?.name,
+      email: req.user?.email,
+    });
   }
 
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() body: Partial<{ name: string; contact?: string; bank_details_json?: any }>,
+    @Req() req: any,
   ) {
-    return this.vendors.update(id, body);
+    return this.vendors.update(id, body, {
+      id: req.user?.id,
+      name: req.user?.name,
+      email: req.user?.email,
+    });
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.vendors.delete(id);
+  delete(@Param('id') id: string, @Req() req: any) {
+    return this.vendors.delete(id, {
+      id: req.user?.id,
+      name: req.user?.name,
+      email: req.user?.email,
+    });
   }
 }

@@ -5,11 +5,13 @@ const prisma = new PrismaClient();
 
 async function main() {
   const roles = [
-    { name: 'SUPER_ADMIN' },
     { name: 'ADMIN' },
     { name: 'MANAGER' },
     { name: 'ACCOUNTANT' },
+    { name: 'HR_MANAGER' },
+    { name: 'FINANCE_MANAGER' },
     { name: 'STAFF' },
+    { name: 'EMPLOYEE' },
   ];
 
   for (const r of roles) {
@@ -24,7 +26,7 @@ async function main() {
   const adminPass = process.env.SEED_ADMIN_PASSWORD || 'ChangeMe!1234';
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existing) {
-    const role = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
+    const role = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
     const passwordHash = await argon2.hash(adminPass);
     await prisma.user.create({
       data: {

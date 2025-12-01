@@ -1,16 +1,22 @@
-import { IonHeader, IonToolbar, IonButtons, IonButton, IonTitle } from '@ionic/react';
+import { IonHeader, IonToolbar, IonButtons, IonTitle, IonButton } from '@ionic/react';
+import ThemeToggle from './ThemeToggle';
+import InstallPwaButton from './InstallPwaButton';
+import { useAuth } from '../auth/AuthContext';
 
 export default function Nav() {
+  const { logout } = useAuth();
+  const onLogout = () => {
+    logout();
+    window.location.href = '/auth/login';
+  };
   return (
-    <IonHeader>
-      <IonToolbar>
-        <IonTitle>Zynq</IonTitle>
+    <IonHeader className="hidden lg:block">
+      <IonToolbar className="border-b zynq-border shadow-soft bg-[color:var(--header)] text-[color:var(--text-primary)]">
+        <IonTitle className="font-semibold">Zynq</IonTitle>
         <IonButtons slot="end">
-          <IonButton href="/">Dashboard</IonButton>
-          <IonButton href="/projects">Projects</IonButton>
-          <IonButton href="/finance">Finance</IonButton>
-          <IonButton href="/hr">HR</IonButton>
-          <IonButton href="/admin">Admin</IonButton>
+          <InstallPwaButton />
+          <ThemeToggle />
+          <IonButton onClick={onLogout}>Logout</IonButton>
         </IonButtons>
       </IonToolbar>
     </IonHeader>

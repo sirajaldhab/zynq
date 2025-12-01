@@ -1,5 +1,5 @@
 import { API_BASE } from '../config';
-import { upsertProjects, ProjectDoc } from './rxdb';
+import { upsertProjects, ProjectDoc, upsertInvoices, upsertPayments, InvoiceDoc, PaymentDoc } from './rxdb';
 
 export type SyncPullResponse = {
   checkpoint: string | null;
@@ -33,6 +33,16 @@ export async function syncPull(token: string, checkpoint: string | null, limit =
     .filter((d) => d.type === 'project')
     .map((d) => ({ id: d.id, ...d.data })) as any;
   if (projects.length) await upsertProjects(projects);
+
+  const invoices: InvoiceDoc[] = data.docs
+    .filter((d) => d.type === 'invoice')
+    .map((d) => ({ id: d.id, ...d.data })) as any;
+  if (invoices.length) await upsertInvoices(invoices);
+
+  const payments: PaymentDoc[] = data.docs
+    .filter((d) => d.type === 'payment')
+    .map((d) => ({ id: d.id, ...d.data })) as any;
+  if (payments.length) await upsertPayments(payments);
   return data;
 }
 

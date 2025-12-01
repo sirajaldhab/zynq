@@ -8,12 +8,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
   name          String
   passwordHash  String
-  status        String         @default("PENDING")
+  status        String         @default("PENDING_APPROVAL")
   role          Role           @relation(fields: [roleId], references: [id])
   roleId        String
   createdAt     DateTime       @default(now())
@@ -23,12 +24,15 @@ model User {
   employee      Employee?
   auditLogs     AuditLog[]
   notifications Notification[]
+  documentCompanies DocumentCompany[]
 }
 
 model Role {
   id              String  @id @default(uuid())
   name            String  @unique
   permissionsJson String
+  description     String?
+  status          String  @default("ACTIVE")
   users           User[]
 }
 
@@ -65,9 +69,34 @@ model Project {
   start_date         DateTime?
   end_date           DateTime?
   status             String    @default("PLANNING")
+  // Hierarchy
+  parentId           String?
+  parent             Project?  @relation("ProjectChildren", fields: [parentId], references: [id])
+  children           Project[] @relation("ProjectChildren")
+  // Client and site
+  clientId           String?
+  client             Client?   @relation(fields: [clientId], references: [id])
+  site               String?
   materials          Material[]
   invoices           Invoice[]
   tasks              Task[]
+  expenses           Expense[]
+  budgets            Budget[]
+  payments           Payment[]
+  ledgerEntries      LedgerEntry[]
+  teams              Team[]
+  milestones         Milestone[]
+  manpowerRecords    ManpowerRecord[]
+  projectExtras      ProjectExtra[]
+}
+
+model ProjectExtra {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
+  otherText String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vendor {
@@ -76,6 +105,28 @@ model Vendor {
   contact          String?
   bank_details_json String?
   materials        Material[]
+  expenses         Expense[]
+  manpowerRecords  ManpowerRecord[]
+  externalLabourExpenses ExternalLabourExpense[]
+}
+
+// Chart of Accounts (simple hierarchical)
+model Account {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  type      String   // ASSET | LIABILITY | INCOME | EXPENSE
+  parentId  String?
+  parent    Account? @relation("AccountChildren", fields: [parentId], references: [id])
+  children  Account[] @relation("AccountChildren")
+
+  // Links
+  invoiceItems InvoiceItem[]
+  expenses     Expense[]
+  budgets      Budget[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([type])
 }
 
 model Client {
@@ -84,6 +135,7 @@ model Client {
   contact              String?
   projects_linked_json String?
   invoices             Invoice[]
+  projects             Project[]
 }
 
 model Material {
@@ -96,10 +148,29 @@ model Material {
   item_description String
   quantity        Float
   unit_price      Float?
+  vat             Float?
   total           Float
   attachments     String?
 
   @@index([projectId, vendorId])
+}
+
+model ManpowerRecord {
+  id             String   @id @default(uuid())
+  project        Project  @relation(fields: [projectId], references: [id])
+  projectId      String
+  vendor         Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId       String
+  site           String
+  main_contractor String?
+  totalLabour    Float
+  dailyRate      Float
+  total          Float
+  date           DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([projectId, vendorId])
+  @@index([projectId, vendorId, date])
 }
 
 model Invoice {
@@ -108,6 +179,7 @@ model Invoice {
   projectId   String
   client      Client    @relation(fields: [clientId], references: [id])
   clientId    String
+  invoice_no  String?   @unique
   invoice_date DateTime
   due_date     DateTime?
   items_json   String
@@ -116,27 +188,121 @@ model Invoice {
   total        Float
   status       String    @default("DRAFT")
   payments     Payment[]
+  items        InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId   String
+  account     Account? @relation(fields: [accountId], references: [id])
+  accountId   String?
+  description String
+  qty         Float     @default(1)
+  unit_price  Float
+  vat_rate    Float?    // optional override
+  amount      Float     // cached line amount (qty*unit_price)
+
+  @@index([invoiceId])
+  @@index([accountId])
 }
 
 model Payment {
   id          String   @id @default(uuid())
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
-  invoiceId   String
+  invoice     Invoice? @relation(fields: [invoiceId], references: [id])
+  invoiceId   String?
+  expense     Expense? @relation(fields: [expenseId], references: [id])
+  expenseId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  projectId   String?
   amount      Float
   payment_date DateTime
   method      String?
   reference   String?
-  created_by  String?
 
   @@index([invoiceId])
+  @@index([expenseId])
+  @@index([projectId])
+}
+
+// Tax rates (flat VAT support)
+model TaxRate {
+  id             String   @id @default(uuid())
+  name           String
+  rate           Float    // e.g., 0.05 for 5%
+  effective_from DateTime
+  effective_to   DateTime?
+
+  @@index([effective_from, effective_to])
+}
+
+model Expense {
+  id         String   @id @default(uuid())
+  project    Project? @relation(fields: [projectId], references: [id])
+  projectId  String?
+  vendor     Vendor?  @relation(fields: [vendorId], references: [id])
+  vendorId   String?
+  date       DateTime
+  account    Account? @relation(fields: [accountId], references: [id])
+  accountId  String?
+  amount     Float
+  category   String
+  note       String?
+  payments   Payment[]
+
+  @@index([projectId, vendorId, date])
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  periodStart DateTime
+  periodEnd   DateTime
+  account     Account? @relation(fields: [accountId], references: [id])
+  accountId   String?
+  amount      Float
+  spent       Float    @default(0)
+  category    String?
+
+  @@index([projectId, periodStart, periodEnd])
+}
+
+// General ledger entries (lightweight for reporting)
+model LedgerEntry {
+  id           String   @id @default(uuid())
+  date         DateTime
+  project      Project? @relation(fields: [projectId], references: [id])
+  projectId    String?
+  account      Account  @relation(fields: [accountId], references: [id])
+  accountId    String
+  debit        Float    @default(0)
+  credit       Float    @default(0)
+  reference_type String?
+  reference_id   String?
+
+  @@index([date])
+  @@index([projectId])
+  @@index([accountId])
 }
 
 model Employee {
   id                       String  @id @default(uuid())
-  user                     User    @relation(fields: [userId], references: [id])
-  userId                   String  @unique
+  user                     User?   @relation(fields: [userId], references: [id])
+  userId                   String? @unique
+  company                  String
+  employeeName             String
+  dateOfJoining            DateTime
+  emiratesId               String
+  labourCardNo             String?
+  mobileNo                 String
+  bankAccountNo            String?
+  salary                   Float
+  status                   String
   employment_details_json  String?
   attendance               Attendance[]
+  leaves                   Leave[]
+  payrolls                 Payroll[]
 }
 
 model Attendance {
@@ -147,8 +313,43 @@ model Attendance {
   check_out  DateTime?
   location   String?
   status     String    @default("PRESENT")
+  approvedBy String?
+  otHours    Float?
+  signature  String?
 
   @@index([employeeId, check_in])
+}
+
+model SiteDaySalary {
+  id        String   @id @default(uuid())
+  site      String
+  daySalary Float
+
+  @@unique([site])
+}
+
+model Leave {
+  id         String   @id @default(uuid())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  start_date DateTime
+  end_date   DateTime
+  type       String
+  status     String   @default("PENDING")
+
+  @@index([employeeId, start_date, end_date])
+}
+
+model Payroll {
+  id         String   @id @default(uuid())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  month      DateTime
+  gross      Float
+  net        Float
+  deductions_json String?
+
+  @@index([employeeId, month])
 }
 
 model Task {
@@ -163,6 +364,27 @@ model Task {
   due_date        DateTime?
   estimated_hours Int?
   progress_percent Int     @default(0)
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  name      String
+  members_json String?
+
+  @@unique([projectId, name])
+}
+
+model Milestone {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  name      String
+  due_date  DateTime?
+  status    String   @default("OPEN")
+
+  @@index([projectId, due_date])
 }
 
 model AuditLog {
@@ -187,9 +409,69 @@ model Notification {
   created_at DateTime @default(now())
 }
 
+// --- Admin Extensions ---
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+}
+
+model SystemLog {
+  id          String   @id @default(uuid())
+  level       String   @default("INFO")
+  message     String
+  context_json String?
+  created_at  DateTime @default(now())
+}
+
 model BackupMeta {
   id         String   @id @default(uuid())
   filename   String
   encrypted  Boolean  @default(true)
   created_at DateTime @default(now())
+}
+
+model BackupSetting {
+  id        String   @id @default("backup-settings")
+  emails    String?
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model DocumentCompany {
+  id          String             @id @default(uuid())
+  name        String             @unique
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt   DateTime           @default(now())
+  documents   CompanyDocument[]
+}
+
+model CompanyDocument {
+  id          String          @id @default(uuid())
+  company     DocumentCompany @relation(fields: [companyId], references: [id])
+  companyId   String
+  type        String          // e.g. 'company-profile' | 'trade-license' | 'vat-certificate' | 'corporate-tax-certificate' | 'establishment-card'
+  fileName    String
+  storagePath String
+  uploadedAt  DateTime        @default(now())
+
+  @@unique([companyId, type])
+}
+
+model ExternalLabourExpense {
+  id          String   @id @default(uuid())
+  vendor      Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId    String
+  month       DateTime
+  totalLabour Float
+  total       Float
+  pmBalance   Float    @default(0)
+  paidAmount  Float    @default(0)
+  balance     Float    @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@unique([vendorId, month])
+  @@index([vendorId, month])
 }

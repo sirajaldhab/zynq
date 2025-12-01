@@ -1,5 +1,172 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html, body, #root { height: 100%; }
+
+/* Sidebar offset for Ionic page stack (desktop & tablet only) */
+@media (min-width: 768px) {
+  :root.has-sidebar .ion-page,
+  :root.has-sidebar ion-content {
+    padding-left: 15rem; /* matches w-60 */
+  }
+
+  /* Small inner gap on both sides within the scroll area */
+  :root.has-sidebar ion-content::part(scroll) {
+    padding-left: 2rem;  /* 32px */
+    padding-right: 2rem; /* 32px */
+  }
+
+  /* Make toolbar content align with page padding (32px) plus sidebar width */
+  :root.has-sidebar ion-toolbar {
+    padding-left: calc(15rem + 2rem);
+    padding-right: 2rem;
+  }
+}
+
+@layer base {
+  :root {
+    /* Light theme */
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --header: #F1F5F9;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --border: #E2E8F0;
+    --accent: #2563EB;
+    --accent-hover: #1E40AF;
+    --accent-2: #06B6D4;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #DC2626;
+    --shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark {
+    /* Dark theme */
+    --bg: #0B0F19;
+    --surface: #151A27;
+    --header: #0E131F;
+    --text-primary: #FFFFFF;
+    --text-secondary: #CBD5E1;
+    --border: #1E2635;
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --accent-2: #06B6D4;
+    --success: #22C55E;
+    --warning: #EAB308;
+    --danger: #EF4444;
+    --shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.4);
+    /* Ionic text variables */
+    --ion-text-color: #ccd4d6;
+    --ion-text-color-rgb: 255,255,255;
+  }
+
+  html {
+    font-family: theme('fontFamily.sans');
+    background: var(--bg);
+  }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    transition: background-color .3s ease, color .3s ease;
+  }
+
+  #root {
+    background: var(--bg);
+  }
+
+  /* Ensure Ionic shell also respects themed background (prevents white flash on transitions) */
+  ion-app,
+  ion-router-outlet,
+  ion-page {
+    background: var(--bg) !important;
+    color: var(--text-primary);
+  }
+
+  /* Smooth color transitions on theme change */
+  * { transition: color .2s ease, background-color .2s ease, border-color .2s ease; }
+
+  /* Ensure explicit Tailwind dark text utilities become white in dark theme only */
+  .dark .text-black,
+  .dark .text-slate-900,
+  .dark .text-slate-800,
+  .dark .text-slate-700,
+  .dark .text-slate-600,
+  .dark .text-slate-500,
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-neutral-900,
+  .dark .text-neutral-800,
+  .dark .text-neutral-700,
+  .dark .text-neutral-600,
+  .dark .text-neutral-500,
+  .dark .text-zinc-900,
+  .dark .text-zinc-800,
+  .dark .text-zinc-700,
+  .dark .text-zinc-600,
+  .dark .text-zinc-500,
+  .dark .text-stone-900,
+  .dark .text-stone-800,
+  .dark .text-stone-700,
+  .dark .text-stone-600,
+  .dark .text-stone-500 { color: #FFFFFF !important; }
+}
+
+@layer components {
+  .zynq-card {
+    @apply rounded-xl border p-4 bg-white dark:bg-[color:var(--surface)] shadow-[var(--shadow)];
+    border-color: var(--border);
+    background-color: var(--surface);
+  }
+  .zynq-muted { color: var(--text-secondary); }
+  .zynq-border { border-color: var(--border); }
+  .zynq-accent { color: var(--accent); }
+}
+
+/* Ensure native form controls match theme in both light/dark */
+select, input, textarea {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+select option { /* dropdown list items */
+  background-color: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Ionic component theming via CSS variables */
+ion-content {
+  --background: var(--bg);
+  color: var(--text-primary);
+}
+
+/* Ensure inner scroll/background areas in Ionic respect theme */
+ion-content::part(background),
+ion-content::part(scroll) {
+  background: var(--bg) !important;
+  color: var(--text-primary);
+}
+ion-toolbar {
+  --background: var(--header);
+  --color: var(--text-primary);
+}
+ion-item {
+  --background: var(--surface);
+  --color: var(--text-primary);
+  --border-color: var(--border);
+}
+
+/* On mobile/tablet, reserve space for fixed mobile header (top) and tab bar (bottom) */
+@media (max-width: 1023px) {
+  ion-content::part(scroll) {
+    padding-top: 3.25rem;  /* approx mobile toolbar height */
+    padding-bottom: 3.25rem; /* approx bottom tab bar height */
+  }
+}
