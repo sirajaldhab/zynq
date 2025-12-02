@@ -90,7 +90,7 @@ export class PayrollService {
     return created;
   }
 
-  update(
+  async update(
     id: string,
     body: Partial<{ month: string; gross: number; net: number; deductions_json?: any }>,
     user?: { id?: string; name?: string; email?: string },
@@ -103,48 +103,46 @@ export class PayrollService {
       data.deductions_json =
         typeof body.deductions_json === 'string' ? body.deductions_json : JSON.stringify(body.deductions_json);
     }
-    return this.prisma.payroll.update({ where: { id }, data, include: { employee: true } }).then((updated) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'updated',
-          entityType: 'Payroll',
-          entityId: updated.id,
-          entityName: updated.employee?.employeeName,
-          extra: {
-            employeeId: updated.employeeId,
-            month: updated.month,
-            gross: updated.gross,
-            net: updated.net,
-          },
-        })
-        .catch(() => {});
-      return updated;
-    });
+    const updated = await this.prisma.payroll.update({ where: { id }, data, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'updated',
+        entityType: 'Payroll',
+        entityId: updated.id,
+        entityName: updated.employee?.employeeName,
+        extra: {
+          employeeId: updated.employeeId,
+          month: updated.month,
+          gross: updated.gross,
+          net: updated.net,
+        },
+      })
+      .catch(() => {});
+    return updated;
   }
 
-  delete(id: string, user?: { id?: string; name?: string; email?: string }) {
-    return this.prisma.payroll.delete({ where: { id }, include: { employee: true } }).then((deleted) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'deleted',
-          entityType: 'Payroll',
-          entityId: deleted.id,
-          entityName: deleted.employee?.employeeName,
-          extra: {
-            employeeId: deleted.employeeId,
-            month: deleted.month,
-            gross: deleted.gross,
-            net: deleted.net,
-          },
-        })
-        .catch(() => {});
-      return deleted;
-    });
+  async delete(id: string, user?: { id?: string; name?: string; email?: string }) {
+    const deleted = await this.prisma.payroll.delete({ where: { id }, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'deleted',
+        entityType: 'Payroll',
+        entityId: deleted.id,
+        entityName: deleted.employee?.employeeName,
+        extra: {
+          employeeId: deleted.employeeId,
+          month: deleted.month,
+          gross: deleted.gross,
+          net: deleted.net,
+        },
+      })
+      .catch(() => {});
+    return deleted;
   }
 }

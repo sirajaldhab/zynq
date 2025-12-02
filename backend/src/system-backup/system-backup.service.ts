@@ -81,7 +81,7 @@ export class SystemBackupService {
 
   private async addFinanceCompanySalaryWorkbook(zip: AdmZip) {
     const rows = await this.prisma.payroll.findMany();
-    const filtered = rows.filter((row) => this.hasSalaryExtras(row.deductions_json));
+    const filtered = rows.filter((row: { deductions_json?: any }) => this.hasSalaryExtras(row.deductions_json));
     const buffer = await this.buildWorkbookFromRecords(filtered, 'Salary Records');
     zip.addFile(this.path('finance_company_employee_salary.xlsx'), buffer);
   }
@@ -100,7 +100,9 @@ export class SystemBackupService {
   private async addProjectMaterialDeliveryWorkbook(zip: AdmZip) {
     const materials = await this.prisma.material.findMany();
     const projects = await this.prisma.project.findMany({ select: { id: true, name: true } });
-    const projectNames = new Map(projects.map((p) => [p.id, p.name] as const));
+    const projectNames = new Map(
+      projects.map((p: { id: string; name: string | null }) => [p.id, p.name ?? ''] as const),
+    );
 
     const workbook = new Workbook();
     const grouped = new Map<string, any[]>();
