@@ -177,7 +177,7 @@ export class DocumentCompaniesService {
 
   async listDocuments(companyId: string) {
     const docs = await this.prisma.companyDocument.findMany({ where: { companyId } });
-    return docs.map((d) => ({ type: d.type, fileName: d.fileName }));
+    return docs.map((d: { type: string; fileName: string }) => ({ type: d.type, fileName: d.fileName }));
   }
 
   async getDocumentFile(companyId: string, type: string) {

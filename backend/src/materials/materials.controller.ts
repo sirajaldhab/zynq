@@ -50,8 +50,9 @@ export class MaterialsController {
       id: req.user?.id,
       name: req.user?.name,
       email: req.user?.email,
-    }).catch((e) => {
-      const msg = (e && (e.message || e.code)) || 'Create failed';
+    }).catch((e: unknown) => {
+      const err = e as { message?: string; code?: string };
+      const msg = err?.message ?? err?.code ?? 'Create failed';
       throw new BadRequestException(msg);
     });
   }
@@ -84,8 +85,9 @@ export class MaterialsController {
       id: req.user?.id,
       name: req.user?.name,
       email: req.user?.email,
-    }).catch((e) => {
-      const msg = (e && (e.message || e.code)) || 'Update failed';
+    }).catch((e: unknown) => {
+      const err = e as { message?: string; code?: string };
+      const msg = err?.message ?? err?.code ?? 'Update failed';
       throw new BadRequestException(msg);
     });
   }

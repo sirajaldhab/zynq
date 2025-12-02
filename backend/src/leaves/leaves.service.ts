@@ -88,7 +88,7 @@ export class LeavesService {
     return created;
   }
 
-  update(
+  async update(
     id: string,
     body: Partial<{ start_date: string; end_date: string; type: string; status: string }>,
     user?: { id?: string; name?: string; email?: string },
@@ -98,48 +98,46 @@ export class LeavesService {
     if (body.end_date) data.end_date = new Date(body.end_date);
     if (body.type !== undefined) data.type = body.type;
     if (body.status !== undefined) data.status = body.status;
-    return this.prisma.leave.update({ where: { id }, data, include: { employee: true } }).then((updated) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'updated',
-          entityType: 'Leave',
-          entityId: updated.id,
-          entityName: updated.employee?.employeeName,
-          extra: {
-            employeeId: updated.employeeId,
-            type: updated.type,
-            status: updated.status,
-            startDate: updated.start_date,
-          },
-        })
-        .catch(() => {});
-      return updated;
-    });
+    const updated = await this.prisma.leave.update({ where: { id }, data, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'updated',
+        entityType: 'Leave',
+        entityId: updated.id,
+        entityName: updated.employee?.employeeName,
+        extra: {
+          employeeId: updated.employeeId,
+          type: updated.type,
+          status: updated.status,
+          startDate: updated.start_date,
+        },
+      })
+      .catch(() => {});
+    return updated;
   }
 
-  delete(id: string, user?: { id?: string; name?: string; email?: string }) {
-    return this.prisma.leave.delete({ where: { id }, include: { employee: true } }).then((deleted) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'deleted',
-          entityType: 'Leave',
-          entityId: deleted.id,
-          entityName: deleted.employee?.employeeName,
-          extra: {
-            employeeId: deleted.employeeId,
-            type: deleted.type,
-            status: deleted.status,
-            startDate: deleted.start_date,
-          },
-        })
-        .catch(() => {});
-      return deleted;
-    });
+  async delete(id: string, user?: { id?: string; name?: string; email?: string }) {
+    const deleted = await this.prisma.leave.delete({ where: { id }, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'deleted',
+        entityType: 'Leave',
+        entityId: deleted.id,
+        entityName: deleted.employee?.employeeName,
+        extra: {
+          employeeId: deleted.employeeId,
+          type: deleted.type,
+          status: deleted.status,
+          startDate: deleted.start_date,
+        },
+      })
+      .catch(() => {});
+    return deleted;
   }
 }

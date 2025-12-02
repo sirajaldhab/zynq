@@ -100,8 +100,8 @@ export class SystemBackupService {
   private async addProjectMaterialDeliveryWorkbook(zip: AdmZip) {
     const materials = await this.prisma.material.findMany();
     const projects = await this.prisma.project.findMany({ select: { id: true, name: true } });
-    const projectNames = new Map(
-      projects.map((p: { id: string; name: string | null }) => [p.id, p.name ?? ''] as const),
+    const projectNames = new Map<string, string>(
+      projects.map((p: { id: string; name: string | null }) => [p.id, p.name ?? '']),
     );
 
     const workbook = new Workbook();
@@ -118,7 +118,7 @@ export class SystemBackupService {
     } else {
       const usedNames = new Set<string>();
       for (const [projectId, rows] of grouped.entries()) {
-        const projectName = projectNames.get(projectId) || 'Unassigned Project';
+        const projectName: string = projectNames.get(projectId) ?? 'Unassigned Project';
         const sheetName = this.uniqueSheetName(this.sanitizeSheetName(projectName), usedNames);
         const sheet = workbook.addWorksheet(sheetName, { views: [{ state: 'frozen', ySplit: 1 }] });
         this.populateSheet(sheet, rows);

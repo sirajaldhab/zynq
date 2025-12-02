@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '@prisma/client';
 import { SystemLogsService } from '../system-logs/system-logs.service';
 import * as argon2 from 'argon2';
 
@@ -91,7 +92,7 @@ export class EmployeesService {
           ? body.employment_details_json
           : JSON.stringify(body.employment_details_json);
     }
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.employee.findFirst({ where: { emiratesId: body.emiratesId } });
       if (existing) {
         throw new BadRequestException('This employee is already registered.');
@@ -117,7 +118,7 @@ export class EmployeesService {
     });
   }
 
-  update(
+  async update(
     id: string,
     body: Partial<{
       dateOfJoining: string;
@@ -138,46 +139,44 @@ export class EmployeesService {
     if (body.bankAccountNo !== undefined) data.bankAccountNo = body.bankAccountNo;
     if (body.salary !== undefined) data.salary = body.salary;
     if (body.status !== undefined) data.status = body.status;
-    return this.prisma.employee.update({ where: { id }, data }).then((updated) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'updated',
-          entityType: 'Employee',
-          entityId: updated.id,
-          entityName: updated.employeeName,
-          extra: {
-            company: updated.company,
-            status: updated.status,
-            salary: updated.salary,
-          },
-        })
-        .catch(() => {});
-      return updated;
-    });
+    const updated = await this.prisma.employee.update({ where: { id }, data });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'updated',
+        entityType: 'Employee',
+        entityId: updated.id,
+        entityName: updated.employeeName,
+        extra: {
+          company: updated.company,
+          status: updated.status,
+          salary: updated.salary,
+        },
+      })
+      .catch(() => {});
+    return updated;
   }
 
-  delete(id: string, user?: { id?: string; name?: string; email?: string }) {
-    return this.prisma.employee.delete({ where: { id } }).then((deleted) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'deleted',
-          entityType: 'Employee',
-          entityId: deleted.id,
-          entityName: deleted.employeeName,
-          extra: {
-            company: deleted.company,
-            status: deleted.status,
-          },
-        })
-        .catch(() => {});
-      return deleted;
-    });
+  async delete(id: string, user?: { id?: string; name?: string; email?: string }) {
+    const deleted = await this.prisma.employee.delete({ where: { id } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'deleted',
+        entityType: 'Employee',
+        entityId: deleted.id,
+        entityName: deleted.employeeName,
+        extra: {
+          company: deleted.company,
+          status: deleted.status,
+        },
+      })
+      .catch(() => {});
+    return deleted;
   }
 
   async createWithUser(
@@ -193,7 +192,7 @@ export class EmployeesService {
     const { email, name, password, roleId, employment_details_json } = body;
     const passwordHash = await argon2.hash(password);
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.create({
         data: { email, name, passwordHash, roleId, status: 'ACTIVE' },
       });

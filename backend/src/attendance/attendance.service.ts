@@ -140,7 +140,7 @@ export class AttendanceService {
     return created;
   }
 
-  update(
+  async update(
     id: string,
     data: Partial<{ check_in: string; check_out?: string; status?: string; location?: string; approvedBy?: string; otHours?: number; signature?: string }>,
     user?: { id?: string; name?: string; email?: string },
@@ -165,46 +165,44 @@ export class AttendanceService {
         toUpdate.signature = null;
       }
     }
-    return this.prisma.attendance.update({ where: { id }, data: toUpdate, include: { employee: true } }).then((updated) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'updated',
-          entityType: 'Attendance',
-          entityId: updated.id,
-          entityName: updated.employee?.employeeName,
-          extra: {
-            employeeId: updated.employeeId,
-            status: updated.status,
-            checkIn: updated.check_in,
-          },
-        })
-        .catch(() => {});
-      return updated;
-    });
+    const updated = await this.prisma.attendance.update({ where: { id }, data: toUpdate, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'updated',
+        entityType: 'Attendance',
+        entityId: updated.id,
+        entityName: updated.employee?.employeeName,
+        extra: {
+          employeeId: updated.employeeId,
+          status: updated.status,
+          checkIn: updated.check_in,
+        },
+      })
+      .catch(() => {});
+    return updated;
   }
 
-  delete(id: string, user?: { id?: string; name?: string; email?: string }) {
-    return this.prisma.attendance.delete({ where: { id }, include: { employee: true } }).then((deleted) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'deleted',
-          entityType: 'Attendance',
-          entityId: deleted.id,
-          entityName: deleted.employee?.employeeName,
-          extra: {
-            employeeId: deleted.employeeId,
-            status: deleted.status,
-            checkIn: deleted.check_in,
-          },
-        })
-        .catch(() => {});
-      return deleted;
-    });
+  async delete(id: string, user?: { id?: string; name?: string; email?: string }) {
+    const deleted = await this.prisma.attendance.delete({ where: { id }, include: { employee: true } });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'deleted',
+        entityType: 'Attendance',
+        entityId: deleted.id,
+        entityName: deleted.employee?.employeeName,
+        extra: {
+          employeeId: deleted.employeeId,
+          status: deleted.status,
+          checkIn: deleted.check_in,
+        },
+      })
+      .catch(() => {});
+    return deleted;
   }
 }

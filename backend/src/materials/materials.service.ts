@@ -37,54 +37,50 @@ export class MaterialsService {
     },
     user?: { id?: string; name?: string; email?: string },
   ) {
-    return this.prisma.project
-      .findUnique({ where: { id: data.projectId } })
-      .then(async (p) => {
-        if (!p) throw new NotFoundException('Invalid projectId');
-        const isUuid = (s?: string | null) => !!s && /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(s);
-        const payload: any = { ...data };
-        // If vendorId carries a vendor NAME (non-UUID), resolve to actual vendor id via upsert by unique name
-        if (payload.vendorId && !isUuid(payload.vendorId)) {
-          const name = String(payload.vendorId).trim();
-          if (name) {
-            const ven = await this.prisma.vendor.upsert({ where: { name }, update: {}, create: { name } });
-            payload.vendorId = ven.id;
-          } else {
-            payload.vendorId = null;
-          }
-        }
-        const created = await this.prisma.material.create({
-          data: payload,
-          include: {
-            project: { select: { id: true, name: true } },
-            vendor: { select: { id: true, name: true } },
-          },
-        });
+    const project = await this.prisma.project.findUnique({ where: { id: data.projectId } });
+    if (!project) throw new NotFoundException('Invalid projectId');
+    const isUuid = (s?: string | null) => !!s && /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(s);
+    const payload: any = { ...data };
+    if (payload.vendorId && !isUuid(payload.vendorId)) {
+      const name = String(payload.vendorId).trim();
+      if (name) {
+        const ven = await this.prisma.vendor.upsert({ where: { name }, update: {}, create: { name } });
+        payload.vendorId = ven.id;
+      } else {
+        payload.vendorId = null;
+      }
+    }
+    const created = await this.prisma.material.create({
+      data: payload,
+      include: {
+        project: { select: { id: true, name: true } },
+        vendor: { select: { id: true, name: true } },
+      },
+    });
 
-        this.systemLogs
-          .logActivity({
-            userId: user?.id,
-            userName: user?.name,
-            userEmail: user?.email,
-            action: 'created',
-            entityType: 'Material',
-            entityId: created.id,
-            entityName: created.item_description,
-            extra: {
-              projectId: created.projectId,
-              projectName: created.project?.name,
-              vendorId: created.vendorId,
-              vendorName: created.vendor?.name,
-              total: created.total,
-            },
-          })
-          .catch(() => {});
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'created',
+        entityType: 'Material',
+        entityId: created.id,
+        entityName: created.item_description,
+        extra: {
+          projectId: created.projectId,
+          projectName: created.project?.name,
+          vendorId: created.vendorId,
+          vendorName: created.vendor?.name,
+          total: created.total,
+        },
+      })
+      .catch(() => {});
 
-        return created;
-      });
+    return created;
   }
 
-  update(
+  async update(
     id: string,
     data: Partial<{
       invoice_date?: Date | null;
@@ -97,63 +93,61 @@ export class MaterialsService {
     }>,
     user?: { id?: string; name?: string; email?: string },
   ) {
-    return this.prisma.material.update({
+    const updated = await this.prisma.material.update({
       where: { id },
       data,
       include: {
         project: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
       },
-    }).then((updated) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'updated',
-          entityType: 'Material',
-          entityId: updated.id,
-          entityName: updated.item_description,
-          extra: {
-            projectId: updated.projectId,
-            projectName: updated.project?.name,
-            vendorId: updated.vendorId,
-            vendorName: updated.vendor?.name,
-            total: updated.total,
-          },
-        })
-        .catch(() => {});
-      return updated;
     });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'updated',
+        entityType: 'Material',
+        entityId: updated.id,
+        entityName: updated.item_description,
+        extra: {
+          projectId: updated.projectId,
+          projectName: updated.project?.name,
+          vendorId: updated.vendorId,
+          vendorName: updated.vendor?.name,
+          total: updated.total,
+        },
+      })
+      .catch(() => {});
+    return updated;
   }
 
-  delete(id: string, user?: { id?: string; name?: string; email?: string }) {
-    return this.prisma.material.delete({
+  async delete(id: string, user?: { id?: string; name?: string; email?: string }) {
+    const deleted = await this.prisma.material.delete({
       where: { id },
       include: {
         project: { select: { id: true, name: true } },
         vendor: { select: { id: true, name: true } },
       },
-    }).then((deleted) => {
-      this.systemLogs
-        .logActivity({
-          userId: user?.id,
-          userName: user?.name,
-          userEmail: user?.email,
-          action: 'deleted',
-          entityType: 'Material',
-          entityId: deleted.id,
-          entityName: deleted.item_description,
-          extra: {
-            projectId: deleted.projectId,
-            projectName: deleted.project?.name,
-            vendorId: deleted.vendorId,
-            vendorName: deleted.vendor?.name,
-            total: deleted.total,
-          },
-        })
-        .catch(() => {});
-      return deleted;
     });
+    this.systemLogs
+      .logActivity({
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        action: 'deleted',
+        entityType: 'Material',
+        entityId: deleted.id,
+        entityName: deleted.item_description,
+        extra: {
+          projectId: deleted.projectId,
+          projectName: deleted.project?.name,
+          vendorId: deleted.vendorId,
+          vendorName: deleted.vendor?.name,
+          total: deleted.total,
+        },
+      })
+      .catch(() => {});
+    return deleted;
   }
 }
