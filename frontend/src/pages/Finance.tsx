@@ -346,6 +346,7 @@ export default function Finance() {
       } catch (e) {
         console.error('Finance summary invoices load error:', e);
         setSummaryInvoicesTotal(0);
+        present({ message: 'Failed to load invoice totals', color: 'danger', duration: 1800, position: 'top' });
       }
 
       try {
@@ -378,6 +379,7 @@ export default function Finance() {
       } catch (e) {
         console.error('Finance summary expense load error:', e);
         setSummaryExpenseTotal(0);
+        present({ message: 'Failed to load expense totals', color: 'danger', duration: 1800, position: 'top' });
       }
 
       try {
@@ -432,6 +434,7 @@ export default function Finance() {
         console.error('Finance summary general expense load error:', e);
         setSummaryGeneralExpenseTotal(0);
         setGeneralExpenses([]);
+        present({ message: 'Failed to load general expenses', color: 'danger', duration: 1800, position: 'top' });
       }
 
       try {
@@ -478,6 +481,7 @@ export default function Finance() {
         console.error('Finance summary salary load error:', e);
         setSummarySalaryTotal(0);
         setSalaryPreview([]);
+        present({ message: 'Failed to load salary totals', color: 'danger', duration: 1800, position: 'top' });
       }
 
       try {
@@ -517,9 +521,10 @@ export default function Finance() {
         console.error('Finance summary external labour load error:', e);
         setSummaryExternalLabourPaid(0);
         setExternalLabourPreview([]);
+        present({ message: 'Failed to load external labour totals', color: 'danger', duration: 1800, position: 'top' });
       }
     })();
-  }, []);
+  }, [present]);
 
   React.useEffect(() => {
     const token = localStorage.getItem('token') || undefined;

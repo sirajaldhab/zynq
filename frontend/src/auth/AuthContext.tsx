@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { io } from 'socket.io-client';
 import { API_BASE } from '../config';
 
 interface AuthState {
@@ -36,20 +37,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const apiBase = API_BASE;
 
-  function parseRoleFromToken(token: string | null): string | null {
-    if (!token) return null;
+  function parseClaimsFromToken(token: string | null): { role: string | null; userId: string | null } {
+    if (!token) return { role: null, userId: null };
     try {
       const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      return payload.role || null;
+      return {
+        role: payload.role || null,
+        userId: payload.sub || null,
+      };
     } catch {
-      return null;
+      return { role: null, userId: null };
     }
   }
+
+  const logout = useCallback(() => {
+    setState({ accessToken: null, refreshToken: null, role: null });
+    try {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('token');
+    } catch {}
+  }, []);
+
+  const claims = parseClaimsFromToken(state.accessToken);
+  const effectiveRole = state.role || claims.role;
 
   const value = useMemo<AuthContextValue>(() => ({
     accessToken: state.accessToken,
     refreshToken: state.refreshToken,
-    role: state.role || parseRoleFromToken(state.accessToken),
+    role: effectiveRole,
     async login(email: string, password: string) {
       const res = await fetch(`${apiBase}/auth/login`, {
         method: 'POST',
@@ -58,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (!res.ok) throw new Error('Login failed');
       const data = await res.json();
-      const role = (data && data.role) || parseRoleFromToken(data.accessToken);
+      const role = (data && data.role) || parseClaimsFromToken(data.accessToken).role;
       setState({ accessToken: data.accessToken, refreshToken: data.refreshToken, role });
     },
     async refresh() {
@@ -70,19 +87,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (!res.ok) throw new Error('Refresh failed');
       const data = await res.json();
-      const role = parseRoleFromToken(data.accessToken);
+      const role = parseClaimsFromToken(data.accessToken).role;
       setState({ accessToken: data.accessToken, refreshToken: data.refreshToken, role });
     },
-    logout() {
-      setState({ accessToken: null, refreshToken: null, role: null });
+    logout,
+  }), [apiBase, logout, state.accessToken, state.refreshToken, effectiveRole]);
+
+  useEffect(() => {
+    if (!state.accessToken) return;
+    const currentClaims = parseClaimsFromToken(state.accessToken);
+    if (!currentClaims.userId) return;
+    const socket = io(`${apiBase}/ws/activity`, {
+      transports: ['websocket'],
+      auth: { token: state.accessToken },
+    });
+
+    const handleForceLogout = (payload: { userId?: string; reason?: string }) => {
+      if (!payload?.userId || payload.userId !== currentClaims.userId) return;
       try {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('token');
+        sessionStorage.setItem('forcedLogoutReason', payload.reason || 'Your account has been signed out.');
       } catch {}
-    },
-  }), [apiBase, state.accessToken, state.refreshToken, state.role]);
+      logout();
+      window.location.href = '/auth/login?forced=1';
+    };
+
+    socket.on('user.forceLogout', handleForceLogout);
+    return () => {
+      socket.off('user.forceLogout', handleForceLogout);
+      socket.disconnect();
+    };
+  }, [apiBase, logout, state.accessToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

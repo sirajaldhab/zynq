@@ -15,7 +15,7 @@ import { useAuth } from '../../auth/AuthContext';
 
 export default function MaterialDelivery() {
   const { id: projectId } = useParams<{ id: string }>();
-  const location = useLocation<{ projectName?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const [present] = useIonToast();
   const { role } = useAuth();
@@ -67,7 +67,13 @@ export default function MaterialDelivery() {
       setLoading(true);
       // Ensure we have the latest vendors for client-side resolution
       let vlist = vendors;
-      try { vlist = await fetchVendors({ token }); setVendors(vlist); } catch {}
+      try {
+        vlist = await fetchVendors({ token });
+        setVendors(vlist);
+      } catch (err) {
+        console.error('MaterialDelivery vendors refresh failed', err);
+        present({ message: 'Unable to refresh vendors list', color: 'warning', duration: 1800, position: 'top' });
+      }
       const res: any = await fetchMaterials({ projectId, token });
       const data = (Array.isArray(res) ? res : res.data) || [];
       const byId = new Map(vlist.map(v => [v.id, v] as const));
@@ -88,8 +94,13 @@ export default function MaterialDelivery() {
   React.useEffect(() => { load(); }, [projectId]);
   React.useEffect(() => {
     const token = localStorage.getItem('token') || undefined;
-    fetchVendors({ token }).then(setVendors).catch(() => {});
-  }, []);
+    fetchVendors({ token })
+      .then(setVendors)
+      .catch((err) => {
+        console.error('MaterialDelivery initial vendors load failed', err);
+        present({ message: 'Failed to load vendors', color: 'danger', duration: 2000, position: 'top' });
+      });
+  }, [present]);
 
   async function resolveVendorId(raw: string | undefined, token?: string): Promise<string | undefined> {
     let v = raw?.trim();

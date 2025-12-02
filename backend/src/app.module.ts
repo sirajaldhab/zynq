@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
 import { JwtAuthGuard } from './auth/jwt.guard';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -13,7 +14,7 @@ import { ClientsModule } from './clients/clients.module';
 import { MaterialsModule } from './materials/materials.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
-import { ActivityGateway } from './realtime/activity.gateway';
+import { RealtimeModule } from './realtime/realtime.module';
 import { SyncModule } from './sync/sync.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { GeneralExpensesModule } from './general-expenses/general-expenses.module';
@@ -37,6 +38,12 @@ import { SystemBackupModule } from './system-backup/system-backup.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -60,6 +67,7 @@ import { SystemBackupModule } from './system-backup/system-backup.module';
     SystemLogsModule,
     SettingsModule,
     DocumentCompaniesModule,
+    RealtimeModule,
     SyncModule,
     ManpowerRecordsModule,
     ExternalManpowerSummariesModule,
@@ -68,7 +76,7 @@ import { SystemBackupModule } from './system-backup/system-backup.module';
     SystemBackupModule,
   ],
   providers: [
-    ActivityGateway,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Order matters: first authenticate, then authorize by role
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

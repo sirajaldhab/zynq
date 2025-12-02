@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { IonPage, IonContent, useIonToast, IonSpinner } from '@ionic/react';
+import { IonButton, IonContent, IonIcon, IonPage, useIonToast } from '@ionic/react';
 import Nav from '../../components/Nav';
 import Input from '../../ui/Input';
 import Select from '../../ui/Select';
@@ -61,10 +61,7 @@ export default function Budgets() {
       console.error('Budgets load error:', e);
       setRows([]);
       setTotal(0);
-      const msg = e?.message || '';
-      if (/HTTP\s(4|5)\d{2}/.test(msg)) {
-        present({ message: 'Failed to load budgets', color: 'danger', duration: 1800, position: 'top' });
-      }
+      present({ message: 'Failed to load budgets', color: 'danger', duration: 1800, position: 'top' });
     } finally { setLoading(false); }
   }
 

@@ -1,16 +1,23 @@
 import { NavLink } from 'react-router-dom';
-import { IonIcon } from '@ionic/react';
-import { gridOutline, cashOutline, peopleOutline, briefcaseOutline, documentTextOutline, settingsOutline, barChartOutline } from 'ionicons/icons';
+import {
+  DashboardIcon,
+  FinanceIcon,
+  HrIcon,
+  ProjectsIcon,
+  DocumentsIcon,
+  AdminIcon,
+  AnalyticsIcon,
+} from '../icons/AppIcons';
 import { useAuth } from '../auth/AuthContext';
 
 const allItems = [
-  { to: '/', label: 'Dashboard', icon: gridOutline, key: 'dashboard' },
-  { to: '/finance', label: 'Finance', icon: cashOutline, key: 'finance' },
-  { to: '/hr', label: 'HR', icon: peopleOutline, key: 'hr' },
-  { to: '/projects', label: 'Projects', icon: briefcaseOutline, key: 'projects' },
-  { to: '/documents-main', label: 'Documents', icon: documentTextOutline, key: 'documents' },
-  { to: '/admin', label: 'Admin', icon: settingsOutline, key: 'admin' },
-  { to: '/analytics', label: 'Analytics', icon: barChartOutline, key: 'analytics' },
+  { to: '/', label: 'Dashboard', icon: DashboardIcon, key: 'dashboard' },
+  { to: '/finance', label: 'Finance', icon: FinanceIcon, key: 'finance' },
+  { to: '/hr', label: 'HR', icon: HrIcon, key: 'hr' },
+  { to: '/projects', label: 'Projects', icon: ProjectsIcon, key: 'projects' },
+  { to: '/documents-main', label: 'Documents', icon: DocumentsIcon, key: 'documents' },
+  { to: '/admin', label: 'Admin', icon: AdminIcon, key: 'admin' },
+  { to: '/analytics', label: 'Analytics', icon: AnalyticsIcon, key: 'analytics' },
 ];
 
 type SidebarProps = {
@@ -65,24 +72,27 @@ export default function Sidebar({ variant = 'desktop', onNavigate }: SidebarProp
     <aside className={containerClasses}>
       <div className="px-2 py-3 text-lg font-semibold tracking-tight">Zynq</div>
       <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
-        {items.map((it) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl transition-colors ${itemPadding} ${
-                isActive
-                  ? 'bg-[color:var(--surface)] text-[color:var(--text-primary)] border zynq-border'
-                  : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--surface)]'
-              }`
-            }
-          >
-            <IonIcon icon={it.icon} className="text-lg" />
-            <span>{it.label}</span>
-          </NavLink>
-        ))}
+        {items.map((it) => {
+          const Icon = it.icon;
+          return (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              end
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl transition-colors ${itemPadding} ${
+                  isActive
+                    ? 'bg-[color:var(--surface)] text-[color:var(--text-primary)] border zynq-border'
+                    : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--surface)]'
+                }`
+              }
+            >
+              <Icon className="text-lg" />
+              <span>{it.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </aside>
   );

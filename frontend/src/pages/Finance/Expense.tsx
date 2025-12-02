@@ -151,10 +151,12 @@ export default function ExpensePage() {
     try {
       const res = await fetchDocumentCompanies({ page: 1, pageSize: 200, token });
       setCompanies(res.data || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load companies for Expense page', err);
       setCompanies([]);
+      present({ message: 'Failed to load companies', color: 'danger', duration: 1800, position: 'top' });
     }
-  }, []);
+  }, [present]);
 
   React.useEffect(() => {
     loadExisting();

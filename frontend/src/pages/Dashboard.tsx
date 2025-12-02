@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, useIonToast } from '@ionic/react';
 import {
   LineChart,
   Line,
@@ -25,9 +25,10 @@ import Select from '../ui/Select';
 import { tooltipStyle, legendWrapperStyle } from '../ui/ChartTheme';
 
 export default function Dashboard() {
+  const [present] = useIonToast();
   const { role } = useAuth();
   const upperRole = (role || '').toUpperCase();
-  const canViewActivities = upperRole === 'ADMIN' || upperRole === 'GM';
+  const canViewActivities = upperRole === 'ADMIN';
   const [monthly, setMonthly] = useState<{ m: string; revenue: number; expenses: number; cash: number }[]>([]);
   const [kpis, setKpis] = useState({
     rev: { value: 0, delta: 0, up: false },
@@ -137,6 +138,7 @@ export default function Dashboard() {
         });
       } catch (e) {
         console.error('Dashboard finance load error:', e);
+        present({ message: 'Unable to load finance KPIs', color: 'danger', duration: 2000, position: 'top' });
       }
 
       try {
@@ -150,6 +152,7 @@ export default function Dashboard() {
         setEmployees({ total: totalEmployees, present: presentCount, onLeave: onLeaveCount });
       } catch (e) {
         console.error('Dashboard HR load error:', e);
+        present({ message: 'Unable to load employee metrics', color: 'danger', duration: 2000, position: 'top' });
       }
 
       try {
@@ -165,9 +168,10 @@ export default function Dashboard() {
         setProjects({ total, byStatus });
       } catch (e) {
         console.error('Dashboard projects load error:', e);
+        present({ message: 'Unable to load project summary', color: 'danger', duration: 2000, position: 'top' });
       }
     })();
-  }, [selectedYear]);
+  }, [selectedYear, present]);
 
   const statusColors = ['#60a5fa', '#34d399', '#f59e0b', '#a78bfa'];
 

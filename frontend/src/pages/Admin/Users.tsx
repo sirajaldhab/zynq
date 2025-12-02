@@ -29,7 +29,7 @@ export default function AdminUsers() {
   const [pendingRows, setPendingRows] = React.useState<UserDto[]>([]);
   const fmtDate = (s?: string) => (s ? new Date(s).toLocaleString() : '');
 
-  const filteredRoles = React.useMemo(
+  const filteredRoles = React.useMemo<RoleDto[]>(
     () => roles.filter((r) => {
       const n = (r.name || '').toUpperCase();
       return !['ADMIN', 'STAFF', 'EMPLOYEE', 'MANAGER'].includes(n);
@@ -234,7 +234,7 @@ function AddUserModal({ roles, open, onClose, onSubmit }: { roles: RoleDto[]; op
   const [status, setStatus] = React.useState<'PENDING'|'ACTIVE'|'REJECTED'>('ACTIVE');
   const [password, setPassword] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
-  const filteredRoles = React.useMemo(
+  const selectableRoles = React.useMemo<RoleDto[]>(
     () => roles.filter((r) => !['STAFF', 'EMPLOYEE'].includes((r.name || '').toUpperCase())),
     [roles],
   );
@@ -251,7 +251,7 @@ function AddUserModal({ roles, open, onClose, onSubmit }: { roles: RoleDto[]; op
           <label className="block text-sm mb-1">Role</label>
           <select className="w-full zynq-input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
             <option value="">Select role</option>
-            {filteredRoles.map((r) => (
+            {selectableRoles.map((r: RoleDto) => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
           </select>
@@ -295,7 +295,7 @@ function EditUserModal({ roles, row, onClose, onSubmit }: { roles: RoleDto[]; ro
             <label className="block text-sm mb-1">Role</label>
             <select className="w-full zynq-input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
               <option value="">Select role</option>
-              {filteredRoles.map((r) => (
+              {roles.map((r: RoleDto) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
@@ -320,13 +320,13 @@ function EditUserModal({ roles, row, onClose, onSubmit }: { roles: RoleDto[]; ro
 }
 
 function ApproveUserModal({ roles, row, onClose, onSubmit }: { roles: RoleDto[]; row: UserDto | null; onClose: () => void; onSubmit: (roleId: string) => Promise<void> | void }) {
-  const filteredRoles = React.useMemo(
+  const selectableRoles = React.useMemo<RoleDto[]>(
     () => roles.filter((r) => !['STAFF', 'EMPLOYEE'].includes((r.name || '').toUpperCase())),
     [roles],
   );
-  const [roleId, setRoleId] = React.useState(row?.roleId || (filteredRoles[0]?.id || ''));
+  const [roleId, setRoleId] = React.useState(row?.roleId || (selectableRoles[0]?.id || ''));
   const [submitting, setSubmitting] = React.useState(false);
-  React.useEffect(() => { setRoleId(row?.roleId || (filteredRoles[0]?.id || '')); }, [row, filteredRoles]);
+  React.useEffect(() => { setRoleId(row?.roleId || (selectableRoles[0]?.id || '')); }, [row, selectableRoles]);
   return (
     <Modal open={!!row} onClose={onClose} title="Approve Account">
       {row && (
@@ -335,7 +335,7 @@ function ApproveUserModal({ roles, row, onClose, onSubmit }: { roles: RoleDto[];
           <div>
             <label className="block text-sm mb-1">Role</label>
             <select className="w-full zynq-input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-              {filteredRoles.map((r) => (
+              {selectableRoles.map((r: RoleDto) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>

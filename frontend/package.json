@@ -31,6 +31,7 @@
     "react-router-dom": "^6.30.1",
     "recharts": "^2.12.7",
     "rxdb": "^16.20.0",
+    "socket.io-client": "^4.8.1",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },

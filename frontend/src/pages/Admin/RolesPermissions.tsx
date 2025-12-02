@@ -228,9 +228,10 @@ function PermissionsModal({ row, onClose, onChange }: { row: RoleDto | null; onC
                 <label key={String(act)} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={local[cat][act]}
+                    checked={Boolean(local[cat]?.[act])}
                     onChange={(e) => {
-                      const next = { ...local, [cat]: { ...local[cat], [act]: e.target.checked } } as PermissionsShape;
+                      const currentCat = local[cat] || { view: false, create: false, edit: false, delete: false, manage: false };
+                      const next = { ...local, [cat]: { ...currentCat, [act]: e.target.checked } } as PermissionsShape;
                       setLocal(next);
                     }}
                   />

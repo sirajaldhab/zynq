@@ -1,13 +1,17 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards, Patch } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateUserDto, UpdateUserDto, ListUsersQueryDto } from './dto';
+import { SystemLogsService } from '../system-logs/system-logs.service';
+import { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 @Roles('ADMIN','HR_MANAGER','FINANCE_MANAGER','PROJECT_MANAGER','MANAGER','ACCOUNTANT')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(private readonly users: UsersService, private readonly logs: SystemLogsService) {}
 
   @Get('me')
   async me(@Req() req: any) {
@@ -16,61 +20,111 @@ export class UsersController {
   }
 
   @Get()
-  list(
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '20',
-    @Query('search') search?: string,
-    @Query('role') role?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.users.list({ page: Number(page), pageSize: Number(pageSize), search, role, status });
+  list(@Query() query: ListUsersQueryDto) {
+    return this.users.list(query);
   }
 
   @Get('pending')
   @Roles('ADMIN','HR_MANAGER')
-  pending(
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '20',
-  ) {
-    return this.users.list({ page: Number(page), pageSize: Number(pageSize), status: 'PENDING_APPROVAL' });
+  pending(@Query() query: ListUsersQueryDto) {
+    return this.users.list({ ...query, status: 'PENDING_APPROVAL' });
   }
 
   @Post()
   @Roles('ADMIN')
-  create(
-    @Body()
-    body: { email: string; name: string; password?: string; roleId: string; status?: string },
-  ) {
-    return this.users.create(body);
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async create(@Body() body: CreateUserDto, @Req() req: AuthenticatedRequest) {
+    const created = await this.users.create(body);
+    this.logs
+      .logActivity({
+        userId: req.user?.userId,
+        userEmail: req.user?.email,
+        action: 'created',
+        entityType: 'User',
+        entityId: created.id,
+        entityName: created.name,
+        extra: { targetEmail: created.email, roleId: created.roleId },
+      })
+      .catch(() => {});
+    return created;
   }
 
   @Put(':id')
   @Roles('ADMIN')
-  update(
-    @Param('id') id: string,
-    @Body() body: Partial<{ email: string; name: string; roleId: string; status: string; password?: string }>,
-  ) {
-    return this.users.update(id, body);
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  async update(@Param('id') id: string, @Body() body: UpdateUserDto, @Req() req: AuthenticatedRequest) {
+    const updated = await this.users.update(id, body);
+    this.logs
+      .logActivity({
+        userId: req.user?.userId,
+        userEmail: req.user?.email,
+        action: 'updated',
+        entityType: 'User',
+        entityId: updated.id,
+        entityName: updated.name,
+        extra: { targetEmail: updated.email, status: updated.status, roleId: updated.roleId },
+      })
+      .catch(() => {});
+    return updated;
   }
 
   @Patch(':id/approve')
   @Roles('ADMIN','HR_MANAGER')
-  approve(
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  async approve(
     @Param('id') id: string,
     @Body() body: { roleId?: string },
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.users.approve(id, body?.roleId);
+    const approved = await this.users.approve(id, body?.roleId);
+    this.logs
+      .logActivity({
+        userId: req.user?.userId,
+        userEmail: req.user?.email,
+        action: 'approved',
+        entityType: 'User',
+        entityId: approved.id,
+        entityName: approved.name,
+        extra: { roleId: approved.roleId },
+      })
+      .catch(() => {});
+    return approved;
   }
 
   @Patch(':id/reject')
   @Roles('ADMIN','HR_MANAGER')
-  reject(@Param('id') id: string) {
-    return this.users.reject(id);
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  async reject(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const rejected = await this.users.reject(id);
+    this.logs
+      .logActivity({
+        userId: req.user?.userId,
+        userEmail: req.user?.email,
+        action: 'rejected',
+        entityType: 'User',
+        entityId: rejected.id,
+        entityName: rejected.name,
+      })
+      .catch(() => {});
+    return rejected;
   }
 
   @Delete(':id')
   @Roles('ADMIN')
-  delete(@Param('id') id: string) {
-    return this.users.delete(id);
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
+  async delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const deleted = await this.users.delete(id);
+    this.logs
+      .logActivity({
+        userId: req.user?.userId,
+        userEmail: req.user?.email,
+        action: 'deleted',
+        entityType: 'User',
+        entityId: deleted.id,
+        entityName: deleted.name,
+        extra: { targetEmail: deleted.email },
+      })
+      .catch(() => {});
+    return deleted;
   }
 }

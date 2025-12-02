@@ -9,7 +9,7 @@ export const projectSchema: RxJsonSchema<any> = {
   properties: {
     id: { type: 'string' },
     name: { type: 'string' },
-    status: { type: 'string', nullable: true },
+    status: { type: 'string' },
     updatedAt: { type: 'string', format: 'date-time' },
   },
   required: ['id', 'name', 'updatedAt'],

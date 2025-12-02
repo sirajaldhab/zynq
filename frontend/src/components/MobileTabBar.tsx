@@ -1,14 +1,13 @@
-import { IonIcon } from '@ionic/react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { gridOutline, cashOutline, peopleOutline, briefcaseOutline, documentTextOutline, personCircleOutline } from 'ionicons/icons';
+import { DashboardIcon, FinanceIcon, HrIcon, ProjectsIcon, DocumentsIcon, ProfileIcon } from '../icons/AppIcons';
 
 const items = [
-  { to: '/', label: 'Dashboard', icon: gridOutline },
-  { to: '/finance', label: 'Finance', icon: cashOutline },
-  { to: '/hr', label: 'HR', icon: peopleOutline },
-  { to: '/projects', label: 'Projects', icon: briefcaseOutline },
-  { to: '/documents-main', label: 'Documents', icon: documentTextOutline },
-  { to: '/profile', label: 'Profile', icon: personCircleOutline },
+  { to: '/', label: 'Dashboard', icon: DashboardIcon },
+  { to: '/finance', label: 'Finance', icon: FinanceIcon },
+  { to: '/hr', label: 'HR', icon: HrIcon },
+  { to: '/projects', label: 'Projects', icon: ProjectsIcon },
+  { to: '/documents-main', label: 'Documents', icon: DocumentsIcon },
+  { to: '/profile', label: 'Profile', icon: ProfileIcon },
 ];
 
 export default function MobileTabBar() {
@@ -29,7 +28,7 @@ export default function MobileTabBar() {
                 active ? 'text-[color:var(--accent)]' : 'text-[color:var(--text-secondary)]'
               }`}
             >
-              <IonIcon icon={item.icon} className="text-lg" />
+              <item.icon className="text-lg" />
               <span>{item.label}</span>
             </button>
           );

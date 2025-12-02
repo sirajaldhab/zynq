@@ -10,6 +10,17 @@ export class SystemBackupService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async getSettings() {
+    const record = await this.findOrCreateSettings();
+    return { emails: record.emails || '' };
+  }
+
+  async updateSettings(emails: string) {
+    const record = await this.findOrCreateSettings();
+    const updated = await this.saveSettings(record.id, emails);
+    return { emails: updated || '' };
+  }
+
   async generateSystemBackupZip() {
     const zip = new AdmZip();
     const timestamp = this.timestamp();
@@ -213,5 +224,50 @@ export class SystemBackupService {
 
   private timestamp() {
     return new Date().toISOString().replace(/[:.]/g, '-');
+  }
+
+  private async findOrCreateSettings(): Promise<{ id: string; emails: string | null }> {
+    try {
+      let record = await (this.prisma as any).backupSetting?.findUnique({ where: { id: 'backup-settings' } });
+      if (record) return record;
+      if ((this.prisma as any).backupSetting) {
+        record = await (this.prisma as any).backupSetting.create({ data: { id: 'backup-settings', emails: null } });
+        return record;
+      }
+    } catch (err) {
+      this.logger.warn(`BackupSetting model missing, falling back to company settings. ${String(err)}`);
+    }
+
+    const company = await this.ensureCompany();
+    const meta = company.settingsJson ? JSON.parse(company.settingsJson) : {};
+    return { id: company.id, emails: meta.__backupEmails || null };
+  }
+
+  private async saveSettings(id: string, emails: string) {
+    try {
+      if ((this.prisma as any).backupSetting) {
+        const updated = await (this.prisma as any).backupSetting.update({
+          where: { id: 'backup-settings' },
+          data: { emails: emails || null },
+        });
+        return updated.emails;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to persist backup setting via dedicated model. ${String(err)}`);
+    }
+
+    const company = await this.ensureCompany();
+    const meta = company.settingsJson ? JSON.parse(company.settingsJson) : {};
+    meta.__backupEmails = emails || undefined;
+    await this.prisma.company.update({ where: { id: company.id }, data: { settingsJson: JSON.stringify(meta) } });
+    return meta.__backupEmails || '';
+  }
+
+  private async ensureCompany() {
+    let company = await this.prisma.company.findFirst();
+    if (!company) {
+      company = await this.prisma.company.create({ data: { name: 'Default', settingsJson: '{}' } });
+    }
+    return company;
   }
 }
